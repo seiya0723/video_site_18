@@ -132,6 +132,7 @@ class ReportSerializer(serializers.ModelSerializer):
         #instanceがNoneじゃない(編集ではない)とき
         if not self.instance:
 
+            print("===================================")
             #これらを組み合わせる
             print(self.validated_data["report_user"])
             print(self.validated_data["report_user"].id)
@@ -142,6 +143,7 @@ class ReportSerializer(serializers.ModelSerializer):
             # settingsからAPIキーを参照、sendgridのライブラリから本文と件名、メールアドレスを指定して送信する。
             # https://noauto-nolife.com/post/django-sendgrid/
             print("管理者へメール送信")
+            print("===================================")
 
         super().save(*args, **kwargs)
 
