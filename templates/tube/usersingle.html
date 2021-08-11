@@ -1,0 +1,176 @@
+{% extends "tube/mypage_base.html" %}
+{% load static %}
+{% load humanize %}
+
+
+{% block extra_head %}
+{{ block.super }}
+<script src="{% static 'tube/js/single.js' %}"></script>
+{% endblock %}
+
+
+{% block mypage_content %}
+
+
+    {% if user %}
+    <div>
+        <h2>{{ user.handle_name }}</h2>
+
+        <div>
+            {% if user.usericon %}
+            <img class="video_usericon" src="{{ user.usericon.url }}" alt="icon">
+            {% else %}
+            <img class="video_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}">
+            {% endif %}
+
+            {% if user.self_introduction %}
+            <div class="array">{{ user.self_introduction|linebreaksbr|urlize }}</div>
+            {% endif %}
+
+            <div class="array">{{ user.date_joined|date:"Y年m月d日 H時i分s秒" }}に登録</div>
+        </div>
+
+        {% if request.user.is_authenticated and request.user.id != user.id %}  {# 自分自身であればボタンを表示させない#}
+        <div class="array">
+            <form id="follow_user_form" class="usersingle_form" action="{% url 'tube:userfollow' user.id  %}" method="POST">
+                {% if request.user in user.followed.all %}
+                <button class="follow btn btn-primary" type="button">フォロー中</button>
+                {% else %}
+                <button class="follow btn btn-outline-primary" type="button">フォローする</button>
+                {% endif %}
+            </form>
+            <form id="block_user_form" class="usersingle_form" action="{% url 'tube:userblock' user.id  %}" method="POST">
+                {% if request.user in user.blocked.all %}
+                <button class="block btn btn-danger" type="button">ブロック中</button>
+                {% else %}
+                <button class="block btn btn-outline-danger" type="button">ブロックする</button>
+                {% endif %}
+            </form>
+        </div>
+        {% endif %}
+
+        <!--ここでタブシステムを使う。
+            スマホ表示時、普通のタブシステムだと折り返されるので、overflow-xとwhite-space:nowrapを組み合わせ、横スクロール形式に仕立てる。
+            ラジオチェック時にラベルを装飾する際に指定するセレクタも変わるので、それに合わせる。-->
+
+        <input id="user_single_detail_radio_1" class="user_single_detail_radio" type="radio" name="user_single_detail_radio" checked>
+        <input id="user_single_detail_radio_2" class="user_single_detail_radio" type="radio" name="user_single_detail_radio">
+        <input id="user_single_detail_radio_3" class="user_single_detail_radio" type="radio" name="user_single_detail_radio">
+        <input id="user_single_detail_radio_4" class="user_single_detail_radio" type="radio" name="user_single_detail_radio">
+
+        <div class="user_single_detail_label_area">
+            <label class="user_single_detail_label" for="user_single_detail_radio_1">投稿した動画</label>
+            <label class="user_single_detail_label" for="user_single_detail_radio_2">フォロー中</label>
+            <label class="user_single_detail_label" for="user_single_detail_radio_3">フォロワー</label>
+            <label class="user_single_detail_label" for="user_single_detail_radio_4">ブロック中</label>
+        </div>
+
+        <!--ここは別テンプレート化したほうがわかりやすいかも知れない。-->
+        <div id="user_single_detail_area_1" class="user_single_detail_area">
+
+            <h3>投稿動画</h3>
+
+            <div class="video_content_list">
+                {% for video in videos %}
+                <div class="mypage_video_content">
+                    <a class="video_content_link" href="{% url 'tube:single' video.id %}">
+                        {% if video.thumbnail %}
+                        <img class="mypage_thumbnail" src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+                        {% else %}
+                        <img class="mypage_thumbnail" src="{% static 'tube/img/no-img.png' %}" alt="{{ video.title }}">
+                        {% endif %}
+                    </a>
+
+                    <div class="s_video_sub_inner">
+                        <div class="s_video_sub_inner_left">
+                            {% if video.user.usericon %}
+                            <a href="{% url 'tube:usersingle' video.user.id %}"><img class="index_usericon" src="{{ video.user.usericon.url }}" alt="icon"></a>
+                            {% else %}
+                            <a href="{% url 'tube:usersingle' video.user.id %}"><img class="index_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></a>
+                            {% endif %}
+                        </div>
+
+                        <div class="s_video_sub_inner_right">
+                            <div class="video_title">{{ video.title }}</div>
+                            <div>{{ video.user.handle_name }} </div>
+
+                            <div class="video_value">
+                                <span class="v_value_span"><i class="far fa-play-circle"></i>{{ video.views|intcomma }}</span>
+                                <span class="v_value_span"><i class="far fa-comment"></i>{{ video.num_comments }}</span>
+                                <span class="v_value_span"><i class="far fa-list-alt"></i>{{ video.num_mylists }}</span>
+                            </div>
+
+                            <div>{{ video.dt|date:"Y年m月d日 H時" }}</div>
+                            <div>{{ video.category }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="mypage_video_content"><p>投稿した動画はありません。</p></div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="user_single_detail_area_2" class="user_single_detail_area">
+
+            <h3>フォロー中</h3>
+            {% for follow_user in follow_users %}
+            <div>
+                {% if follow_user.to_user.usericon %}
+                <a href="{% url 'tube:usersingle' follow_user.to_user.id  %}"><img class="video_usericon" src="{{ follow_user.to_user.usericon.url }}" alt="icon"></a>
+                {% else %}
+                <a href="{% url 'tube:usersingle' follow_user.to_user.id  %}"><img class="video_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></a>
+                {% endif %}
+                <a href="{% url 'tube:usersingle' follow_user.to_user.id  %}">{{ follow_user.to_user.handle_name }}</a>
+            </div>
+            {% endfor%}
+
+        </div>
+
+        <div id="user_single_detail_area_3" class="user_single_detail_area">
+
+            <h3>フォロワー</h3>
+            {% for follow_user in follower_users %}
+            <div>
+                {% if follow_user.from_user.usericon %}
+                <a href="{% url 'tube:usersingle' follow_user.from_user.id  %}"><img class="video_usericon" src="{{ follow_user.from_user.usericon.url }}" alt="icon"></a>
+                {% else %}
+                <a href="{% url 'tube:usersingle' follow_user.from_user.id  %}"><img class="video_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></a>
+                {% endif %}
+                <a href="{% url 'tube:usersingle' follow_user.from_user.id  %}">{{ follow_user.from_user.handle_name }}</a>
+            </div>
+            {% endfor%}
+
+        </div>
+
+        <div id="user_single_detail_area_4" class="user_single_detail_area">
+
+            {# ここから先、投稿者自身usersingle #}
+            {% if request.user.is_authenticated and request.user.id == user.id %}
+
+            <h3>ブロック中</h3>
+            {# blockを変数名にしてしまうとシンタックスカラーなどで問題あり(テンプレートタグのblockと解釈される)のため、block_userとする #}
+            {% for block_user in block_users %}
+            <div>
+                {% if block_user.to_user.usericon %}
+                <a href="{% url 'tube:usersingle' block_user.to_user.id  %}"><img class="video_usericon" src="{{ block_user.to_user.usericon.url }}" alt="icon"></a>
+                {% else %}
+                <a href="{% url 'tube:usersingle' block_user.to_user.id  %}"><img class="video_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></a>
+                {% endif %}
+                <a href="{% url 'tube:usersingle' block_user.to_user.id  %}">{{ block_user.to_user.handle_name }}</a>
+            </div>
+            {% endfor%}
+
+            {% endif %}
+            {# ここまで、投稿者自身のusersingle #}
+
+        </div>
+
+    </div>
+    {% else %}
+    <div>ユーザーが見つかりませんでした</div>
+    {% endif %}
+
+{% endblock %}
+
+

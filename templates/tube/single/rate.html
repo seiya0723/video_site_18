@@ -1,0 +1,13 @@
+<form class="single_video_rating_content" action="{% url 'tube:single_mod' video.id %}">
+    {% csrf_token %}
+    <i class="far fa-thumbs-up single_video_rating_button rating_good {% if already_good %}already_good{% endif %}"></i>
+    <span class="rating_num">{{ good|length }}</span>
+</form>
+
+
+<form class="single_video_rating_content" action="{% url 'tube:single_mod' video.id %}">
+    {% csrf_token %}
+    <i class="far fa-list-alt single_video_rating_button mylist_entry {% if already_mylist %}already_mylist{% endif %}"></i>
+    <span class="rating_num">{{ mylist|length }}</span>
+</form>
+

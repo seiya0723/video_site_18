@@ -1,0 +1,70 @@
+body{
+  margin: 0;
+  padding: 0;
+  background: #C4FEFF;
+  color: black;
+  font-size: 1.2rem;
+}
+
+
+main a {
+    color:#29F2DE;
+}
+
+h1 {
+    color:white;
+    /*text-shadow: #fc0 1px 0 10px;*/
+    text-shadow: 1px 1px 2px #FF19E0, 0 0 1em #3728E4, 0 0 0.2em #3728E4;
+}
+
+input[type="text"],input[type="email"],input[type="password"] {
+    font-size:1.2rem;
+    padding:0.25rem;
+    margin:0.25rem 0;
+    border:solid 0.15rem #FF19E0;
+    background:white;
+    color:black;
+    transition:0.2s;
+    
+}
+input[type="text"]:focus,input[type="email"]:focus,input[type="password"]:focus {
+    box-shadow:0px 0px 3px 1.2px #FF19E0;
+    background:white;
+    transition:0.2s;
+    outline:none;
+}
+
+.login_logout_page {
+    position: absolute;
+    top: 100px;
+    left: 30px;
+    right: 40px;
+    bottom: 100px;
+    width: auto;
+    height: auto;
+}
+
+/* ログインボタン */
+button[type="submit"] {
+    display: inline-block;
+    padding: 0.5rem 2rem;
+    border:solid 0.15rem #FF19E0;
+    border-radius: 25px;
+    text-decoration: none;
+    color: #FF19E0;
+    background: white;
+    cursor:pointer;
+    transition: .2s;
+    outline:none;
+}
+
+button[type="submit"]:hover {
+    /*
+    background: rgb(255,213,73);
+    background: linear-gradient(180deg, rgba(255,213,73,1) 0%, rgba(255,116,29,1) 60%, rgba(171,185,255,1) 100%);
+    */
+    background: #ffff40;
+    color:black;
+    transition:0.2s;
+}
+

@@ -1,0 +1,38 @@
+{% extends "tube/mypage_base.html" %}
+{% load static %}
+
+
+{% block extra_head %}
+{{ block.super }}
+
+<script src="{% static 'tube/js/notify.js' %}"></script>
+{% endblock %}
+
+
+{% block mypage_content %}
+
+<h2>通知</h2>
+
+
+<div class="notify_control_area">
+    <span id="notify_all_open"  class="notify_control_button">全て開く</span>
+    <span id="notify_all_close" class="notify_control_button">全て閉じる</span>
+</div>
+
+{% for notify_target in notify_targets %}
+<div class="notify_content_area">
+    <input id="{{ notify_target.id }}" class="notify_content_chk" type="checkbox" value="{% if not notify_target.read %}{{ notify_target.notify.id }}{% endif %}">
+    <label for="{{ notify_target.id }}" class="notify_content_label">
+        {% if not notify_target.read %}<i class="fas fa-exclamation-circle"></i>{% endif %}
+        [{{ notify_target.notify.category }}] {{ notify_target.notify.title }}
+    </label>
+    <div class="notify_content_body">
+        <div class="notify_content">{{ notify_target.notify.content|linebreaksbr }}</div>
+        <div class="notify_dt">通知日時:{{ notify_target.dt }}</div>
+    </div>
+</div>
+{% endfor %}
+
+
+
+{% endblock %}

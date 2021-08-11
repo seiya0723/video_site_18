@@ -1,0 +1,259 @@
+{% extends "tube/base.html" %}
+{% load humanize %}
+{% load static %}
+{% load param_change %}
+
+{% block site_title %}TubeIntegrity{% endblock %}
+
+
+{% block extra_head %}
+{{ block.super }}
+
+<!--video.jsのCDNを読み込む-->
+<link href="https://vjs.zencdn.net/7.11.4/video-js.css" rel="stylesheet" />
+<script src="https://vjs.zencdn.net/7.11.4/video.min.js"></script>
+
+<!--video.jsのカスタムスキンを指定-->
+<link rel="stylesheet" href="{% static 'tube/css/videojs.css' %}">
+
+<script src="{% static 'tube/js/single.js' %}"></script>
+<script src="{% static 'tube/js/report.js' %}"></script>
+
+{% endblock %}
+
+
+
+{% block page_title %}TubeIntegrity{% endblock %}
+
+{% block main %}
+
+         {% include "tube/search_form.html" %}
+
+    <div class="single_video_area">
+        <div class="single_video_content">
+            <div class="single_video_content_inner">
+                <video id="video-js" class="single_video video-js vjs-default-skin vjs-big-play-centered vjs-16-9">
+                    <source src="{{ video.movie.url }}" type="video/mp4">
+                </video>
+            </div>
+
+
+        </div>
+
+        <div class="single_video_subcontent">
+            <div class="single_video_subcontent_inner">
+
+                <input id="subcontent_tab_1" class="subcontent_tab_radio" type="radio" name="subcontent_tab" checked>
+                <input id="subcontent_tab_2" class="subcontent_tab_radio" type="radio" name="subcontent_tab">
+                <input id="subcontent_tab_3" class="subcontent_tab_radio" type="radio" name="subcontent_tab">
+
+                {% if request.user == video.user %}
+                <input id="subcontent_tab_4" class="subcontent_tab_radio" type="radio" name="subcontent_tab">
+                {% endif %}
+
+                <div class="subcontent_tab_label_area">
+                    <label for="subcontent_tab_1" class="subcontent_tab_label">説明</label>
+                    <label for="subcontent_tab_2" class="subcontent_tab_label">コメント</label>
+                    <label for="subcontent_tab_3" class="subcontent_tab_label">関連動画</label>
+
+                    {% if request.user == video.user %}
+                    <label for="subcontent_tab_4" class="subcontent_tab_label">投稿者オプション</label>
+                    {% endif %}
+                </div>
+
+
+                <div class="single_video_description">
+
+                    <div class="s_video_sub_inner">
+                        <div class="s_video_sub_inner_left">
+                            {% if video.user.usericon %}
+                            <a href="{% url 'tube:usersingle' video.user.id %}"><img class="video_usericon" src="{{ video.user.usericon.url }}" alt="icon"></a>
+                            {% else %}
+                            <a href="{% url 'tube:usersingle' video.user.id %}"><img class="video_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></a>
+                            {% endif %}
+                        </div>
+
+                        <div class="s_video_sub_inner_right">
+                            <div class="video_title">{{ video.title }}</div>
+                            <a href="{% url 'tube:usersingle' video.user.id %}"><div>{{ video.user.handle_name }} </div></a>
+
+                            <div class="video_value">
+                                <span class="v_value_span"><i class="far fa-play-circle"></i>{{ video.views|intcomma }}</span>
+                                <span class="v_value_span"><i class="far fa-comment"></i>{{ counts.num_comments }}</span>
+                                <span class="v_value_span"><i class="far fa-list-alt"></i>{{ counts.num_mylists }}</span>
+                            </div>
+
+                            <div>{{ video.dt|date:"Y年m月d日 H時i分s秒" }}</div>
+                            <div>{{ video.category }}</div>
+                        </div>
+                    </div>
+
+
+                        {# 投稿者のフォロー。認証済みかつ投稿者以外のユーザーにだけフォローボタンを表示させる。本人のものは表示させない#}
+
+                            {% if request.user.is_authenticated and request.user.id != video.user.id %}
+                            <form id="follow_user_form" action="{% url 'tube:userfollow' video.user.id  %}" method="POST">
+                                {% if request.user in video.user.followed.all %}
+                                <button class="follow btn btn-primary" type="button">フォロー中</button>
+                                {% else %}
+                                <button class="follow btn btn-outline-primary" type="button">フォローする</button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+
+
+
+                        {% if request.user.is_authenticated and request.user.id != video.user.id %}
+                        <form id="block_user_form" action="{% url 'tube:userblock' video.user.id  %}" method="POST">
+                            {% if request.user in video.user.blocked.all %}
+                            <button class="block btn btn-danger" type="button">ブロック中</button>
+                            {% else %}
+                            <button class="block btn btn-outline-danger" type="button">ブロックする</button>
+                            {% endif %}
+                        </form>
+                        {% endif %}
+
+
+                    <div id="mylist_message" class="js_message"></div>
+                    <div class="single_video_mod_area">
+                        <div id="single_video_rating_area" class="single_video_rating_area">
+                            {% include "tube/single/rate.html" %}
+                        </div>
+                    </div>
+
+                    <div>{{ video.description|linebreaksbr }}
+                        {% if video.edited %}
+                            <p class="sort"><i class="far fa-edit"></i></p>
+                        {% endif %}
+                    </div></br>
+
+
+                    <input id="qr_code_box" class="qr_code_button" type="checkbox"><label for="qr_code_box" class="qr_code_label">QRコード</label>
+                    <img class="qr_code" src="data:image/png;base64,{{ qr }}" alt="{{ request.build_absolute_uri }}"/>
+
+                </div>
+
+                <div class="single_video_comments">
+                    {% if request.user.is_authenticated and request.user.id == userpolicy.user.id %}
+
+                    <div id="comments_message" class="js_message"></div>
+                    {# コメント投稿フォーム #}
+                    <form id="single_video_comments_form" action="{% url 'tube:single_mod' video.id %}" method="POST" >
+                     {% csrf_token %}
+                     <textarea class="textarea_form" name="content" placeholder="コメントを書く。" rows="1" maxlength="500"></textarea>
+
+                     <button id="single_video_comments_submit" class="v_c_subumit_button btn btn-outline-primary btn-sm" type="button"><i class="far fa-paper-plane"></i></button>
+                    </form><br>
+
+                    {% else %}
+                        <div>コメントを投稿するには、ユーザー登録および利用規約への同意が必要です。</div>
+                        <a href="{% url 'account_signup' %}"><div>会員登録</div></a>
+                        <a href="{% url 'account_login' %}"><div>ログイン</div></a>
+                        <a href="{% url 'tube:user_policy' %}"><div>利用規約</div></a>
+                    {% endif %}
+
+                    <div id="video_comments_area">
+                     {% include "tube/single/comments.html" %}
+                    </div>
+
+                </div>
+
+                <div class="single_video_relate">
+
+                    {% for relate in relates %}
+                    <a class="video_content_link" href="{% url 'tube:single' relate.id %}">
+                        {% if relate.thumbnail %}
+                        <img class="video_thumbnail" src="{{ relate.thumbnail.url }}" alt="{{ relate.title }}">
+                        {% else %}
+                        <img class="video_thumbnail" src="{% static 'tube/img/no-img.png' %}" alt="{{ relate.title }}">
+                        {% endif %}
+                    </a>
+
+                    <div class="index_video_content_inner">
+
+                        <div class="index_video_content_inner_left">
+                             {% if relate.user.usericon %}
+                            <a href="{% url 'tube:usersingle' relate.user.id %}"><img class="index_usericon" src="{{ relate.user.usericon.url }}" alt="icon"></a>
+                            {% else %}
+                            <a href="{% url 'tube:usersingle' relate.user.id %}"><img class="index_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></a>
+                            {% endif %}
+                        </div>
+
+                        <div class="index_video_content_inner_right">
+                            <a href="{% url 'tube:single' relate.id %}"><div class="video_title">{{ relate.title }}</div></a>
+                            <a href="{% url 'tube:usersingle' relate.user.id %}"><div>{{ relate.user.handle_name }} </div></a>
+                            <div class="video_value">
+                                <span class="v_value_span"><i class="far fa-play-circle"></i>{{ relate.views|intcomma }}</span>
+                                <span>{{ relate.dt|date:"Y年m月d日" }}</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {% empty %}
+                    <div class="video_content">動画がありません</div>
+
+                    {% endfor %}
+
+                </div>
+
+                {% if request.user == video.user %}
+                <div class="single_video_uploader">
+                    <div>
+
+                        {% if video.user.usericon %}
+                        <a href="{% url 'tube:usersingle' video.user.id %}"><img class="video_usericon" src="{{ video.user.usericon.url }}" alt="icon"></a>
+                        {% else %}
+                        <a href="{% url 'tube:usersingle' video.user.id %}"><img class="video_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></a>
+                        {% endif %}
+
+                        <a href="{% url 'tube:usersingle' video.user.id %}"><div>{{ video.user.handle_name }}</div></a>
+
+
+                        <input id="edit_tab_1" class="edit_tab_radio" type="radio" name="edit_tab" checked><label for="edit_tab_1" class="edit_tab_label">編集</label>
+                        <input id="edit_tab_2" class="edit_tab_radio" type="radio" name="edit_tab"><label for="edit_tab_2" class="edit_tab_label">削除</label>
+
+                            <div class="edit_form">
+                                <h3>投稿欄編集</h3>
+                                <p>カテゴリー/タイトル/概要欄の編集ができます。</p>
+                                <!-- Ajax でPUTメソッドを送信 -->
+                                <form id="video_update_form" action="{% url 'tube:single_mod' video.id %}" >
+                                    {% csrf_token %}
+
+                                    <select class="select_form" name="category">
+                                        <option value="">カテゴリを選択してください</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if category.id == video.category.id %}selected{% endif %}>{{ category.name }}</option>
+                                        {% empty %}
+                                        <option value="">カテゴリがありません。</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <input class="input_form_text" type="text" value="{{ video.title }}" name="title" placeholder="タイトル...">
+                                    <textarea class="textarea_form" name="description" rows="4" placeholder="概要欄...">{{ video.description }}</textarea>
+                                    <input id="video_update" class="btn-gradient-success" type="button" value="編集">
+                                </form>
+                            </div>
+
+                            <div class="delete_form">
+
+                                <!-- Ajax でDELETEメソッドを送信 -->
+                                <form id="video_delete_form" action="{% url 'tube:single_mod' video.id %}" method="delete">
+                                    {% csrf_token %}
+                                    <h3>動画削除欄</h3>
+                                    <p>この動画を削除しますか？</p>
+                                    <input id="video_delete" class="btn-gradient-delete" type="button" value="削除">
+                                </form>
+                            </div>
+
+                            <div id="delete_message" class="js_message"></div>
+
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

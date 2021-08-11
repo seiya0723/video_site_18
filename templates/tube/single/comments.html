@@ -1,0 +1,110 @@
+{% load param_change %}
+{% load static %}
+
+{% for comment in comments %}
+<div class="comment_video_sub_inner">
+
+    <div class="comment_video_sub_inner_left">
+        <a href="{% url 'tube:usersingle' comment.user.id %}">
+            {% if comment.user.usericon %}
+                <div><img class="video_usericon" src="{{ comment.user.usericon.url }}" alt="icon"></div>
+            {% else %}
+                <div><img class="video_usericon" src="{% static 'tube/img/non_usericon.png' %}" alt="{{ icon }}"></div>
+            {% endif %}
+        </a>
+    </div>
+
+
+
+    <div class="comment_video_sub_inner_right">
+
+        <a href="{% url 'tube:usersingle' comment.user.id %}"><div> {{ comment.user.handle_name }} </div></a>
+
+        {# コメント編集、削除、通報ボタン表示 #}
+        <input id="comment_edit_menu_{{ comment.id }}" class="comment_edit_menu_button" type="checkbox">
+            <label class="comment_edit_label" for="comment_edit_menu_{{ comment.id }}">
+                <i class="fas fa-ellipsis-h"></i>
+            </label>
+
+
+
+            {% if request.user.id == comment.user.id %}
+                {# 編集ボタン #}
+                <input id="edit_{{ comment.id }}" type="checkbox" class="v_c_edit_tab" name="v_c_edit_tab" value="{{ comment.id }}">
+                <label for="edit_{{ comment.id }}" class="v_c_edit_tab_label edit_menu1" value="{{ comment.id }}"><i class="far fa-edit"></i></label>
+
+                {# コメント削除フォーム #}
+                <form class="v_comment_delete_form_{{ comment.id}} edit_menu2" action="{% url 'tube:video_comment_edit' comment.id %}" method="delete">
+                    <input id="v_c_delete1_{{ comment.id }}" type="button" class="v_c_delete_button" value="{{ comment.id }}"><label for="v_c_delete1_{{ comment.id }}" class="v_c_edit_tab_label"><i class="fas fa-eraser"></i></label>
+                </form>
+
+            {% elif request.user.id == comment.target.user.id %}
+                {# コメント削除フォーム #}
+                <form class="v_comment_delete_form_{{ comment.id}} edit_menu1" action="{% url 'tube:video_comment_edit' comment.id %}" method="delete">
+                    <input id="v_c_delete2_{{ comment.id }}" type="button" class="v_c_delete_button" value="{{ comment.id }}"><label for="v_c_delete2_{{ comment.id }}" class="v_c_edit_tab_label"><i class="fas fa-eraser"></i></label>
+                </form>
+
+                {# 通報ボタン #}
+                <input id="notice1_{{ comment.id }}" type="checkbox" class="v_c_report_tab" name="v_c_report_tab"><label for="notice1_{{ comment.id }}" class="v_c_report_tab_label edit_menu2"><i class="fas fa-bell"></i></label>
+            {% else %}
+                {# 通報ボタン #}
+                <input id="notice2_{{ comment.id }}" type="checkbox" class="v_c_report_tab" name="v_c_report_tab"><label for="notice2_{{ comment.id }}" class="v_c_report_tab_label edit_menu1"><i class="fas fa-bell"></i></label>
+            {% endif %}
+
+        {# コメント内容#}
+        <div class="v_comment_content" id="report_target_{{ comment.id }}">{{ comment.content|linebreaksbr|urlize }}</div>
+
+        {# 削除メッセージ #}
+        <div id="v_c_edit_message_{{ comment.id}}" class="js_message"></div>
+
+        {# コメント編集フォーム#}
+        <form id="v_comment_update_form_{{ comment.id }}" class="v_comment_update_form" name="v_comment_update_form_{{ comment.id }}" action="{% url 'tube:video_comment_edit' comment.id %}">
+            {% csrf_token %}
+            <textarea class="textarea_form" name="content" placeholder="コメントを編集する。" maxlength="500">{{ comment.content }}</textarea>
+            <button class="v_c_edit_button btn btn-outline-primary btn-sm" value="{{ comment.id }}" type="button"><i class="far fa-paper-plane"></i></button>
+        </form>
+
+        {# 通報フォーム #}
+        {% if request.user.is_authenticated %}
+        <form id="report_form_{{ comment.id }}" class="report_form" action="{% url 'tube:report' request.user.id %}" method="POST">
+            {% csrf_token %}
+            {{ form }}
+            <textarea class="textarea_form" name="reason" placeholder="報告理由をお書きください。" maxlength="500"></textarea>
+            <button  class="report_submit btn btn-outline-primary btn-sm" value="{{ comment.id }}" type="button"><i class="far fa-paper-plane"></i></button>
+        </form>
+        {% endif %}
+
+        <div class="video_comment_dt">{{ comment.dt|date:"Y-m-d h時" }} &nbsp;<i class="far fa-comment"></i>{{ comment.num_reply }}&nbsp;</div>
+
+        <!--TIPS:コメントはループするのでidが重複してしまう。id属性の指定は禁止 ←ただし、UUIDを噛ませることで重複を防ぐことができる。-->
+        <input id="reply_button_{{ comment.id }}" class="reply_chk" type="checkbox"><label class="reply_label" for="reply_button_{{ comment.id }}">返信</label>
+
+
+        <div class="reply_area">
+            <form id="reply_form_{{ comment.id }}" action="{% url 'tube:video_comment_reply' comment.id  %}" method="POST">
+                {% csrf_token %}
+                <textarea class="textarea_form" name="content" placeholder="コメントを書く。" raws="1"></textarea>
+                <button class="reply_submit btn btn-outline-primary btn-sm" value="{{ comment.id }}" type="button"><i class="far fa-paper-plane"></i></button>
+            </form><br class="my-2">
+            <div id="reply_content_{{ comment.id }}"><!--TODO:ここにリプライがJSによりレンダリングされる--></div>
+        </div>
+
+        <label id="edit_menu_closer" class="edit_menu_closer" for="comment_edit_menu_{{ comment.id }}"></label>
+
+    </div>
+
+
+
+
+
+
+</div>
+{% endfor %}
+
+{% if comments %}
+<form id="comment_pagination_area" action="{% url 'tube:single_mod' video.id %}" method="GET">
+    {% generate_pagelink_ajax request "page" "1" comments.paginator.num_pages comments.number %}
+</form>
+
+{% endif %}
+
